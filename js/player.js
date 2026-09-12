@@ -20,7 +20,7 @@ const Player = (() => {
   const fsBtn           = document.getElementById('player-fullscreen-btn');
 
   function _toggleFullscreen() {
-    const el = document.getElementById('player-frame-wrap');
+    const el = overlay; // Üst bar ile birlikte tüm overlay'i tam ekrana al
     if (!document.fullscreenElement) {
       el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
     } else {
