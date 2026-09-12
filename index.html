@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="description" content="Canlı futbol maçlarını ücretsiz izle" />
+  <title>Onur Sports – Canlı Maçlar</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/public/icon-192.png" />
+
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <span class="logo-icon">⚽</span>
+        <span class="logo-text">Onur Sports</span>
+      </div>
+      <div class="header-ticker">
+        <span class="ticker-text">
+          Ünlü futbolcu Hakan Ünal, jet sosyete Ajda hanım, iş insanı Ali bey hepsi Onur Sports'da
+          &nbsp;&nbsp;&nbsp;⚽&nbsp;&nbsp;&nbsp;
+          Ünlü futbolcu Hakan Ünal, jet sosyete Ajda hanım, iş insanı Ali bey hepsi Onur Sports'da
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <p>Maçlar yükleniyor…</p>
+  </div>
+
+  <!-- Error -->
+  <div id="error-screen" style="display:none">
+    <div class="error-icon">⚠️</div>
+    <p id="error-msg">Bağlantı hatası oluştu.</p>
+    <button id="error-retry-btn">Yeniden Dene</button>
+  </div>
+
+  <!-- Match Grid -->
+  <main id="match-grid-wrap">
+    <div id="match-grid" style="display:none"></div>
+  </main>
+
+</div>
+
+<!-- Player Overlay -->
+<div id="player-overlay" class="player-overlay" style="display:none">
+  <div class="player-topbar" id="player-topbar">
+    <button class="player-close-btn" id="player-close-btn" title="Kapat">✕</button>
+    <span class="player-match-title" id="player-match-title"></span>
+    <span class="player-source-label" id="player-source-label"></span>
+    <button class="player-fullscreen-btn" id="player-fullscreen-btn" title="Tam Ekran">⛶</button>
+  </div>
+  <div class="player-frame-wrap" id="player-frame-wrap">
+    <iframe
+      id="player-iframe"
+      class="player-iframe"
+      allowfullscreen
+      allow="autoplay; fullscreen; encrypted-media; picture-in-picture"
+      frameborder="0"
+      scrolling="no"
+    ></iframe>
+    <div class="player-loading" id="player-loading">
+      <div class="spinner"></div>
+      <span>Yayın yükleniyor…</span>
+    </div>
+  </div>
+</div>
+
+<!-- Source Popup -->
+<div id="source-popup-overlay" role="dialog" aria-modal="true">
+  <div id="source-popup">
+    <div class="popup-header">
+      <div id="popup-match-title"></div>
+    </div>
+    <div class="popup-divider"></div>
+    <div class="popup-source-label">Kaynak Seçin</div>
+    <div id="popup-source-list" role="list"></div>
+  </div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/player.js"></script>
+<script src="js/ui.js"></script>
+<script>
+  window.AppMain = (() => {
+    async function load() {
+      UI.showLoading();
+      try {
+        const matches = await AppAPI.fetchAllMatches();
+        UI.hideLoading();
+        UI.renderMatchList(matches);
+      } catch (err) {
+        UI.showError('Maçlar yüklenemedi.');
+      }
+    }
+
+    async function silentLoad() {
+      try {
+        const matches = await AppAPI.fetchAllMatches();
+        UI.renderMatchList(matches);
+      } catch (err) {
+        console.warn('[AppMain] Sessiz yenileme başarısız');
+      }
+    }
+
+    function init() {
+      UI.init();
+      load();
+      // 5 dakikada bir sessiz yenile
+      setInterval(silentLoad, 5 * 60 * 1000);
+    }
+
+    return { init, load };
+  })();
+
+  document.addEventListener('DOMContentLoaded', () => AppMain.init());
+</script>
+
+</body>
+</html>
