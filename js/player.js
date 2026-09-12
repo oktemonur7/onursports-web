@@ -101,11 +101,16 @@ const Player = (() => {
 
   fsBtn?.addEventListener('click', _toggleFullscreen);
 
-  // Ekrana tıklandığında üst barı aç/kapat (mouse hareketi ile değil)
-  const clickShield = document.getElementById('player-click-shield');
-  clickShield?.addEventListener('click', (e) => {
-    e.stopPropagation();
+  // İframe'e tıklandığında (veya overlay tıklandığında) üst barı göster
+  overlay?.addEventListener('click', (e) => {
     _toggleTopbar();
+  });
+
+  // Kullanıcı iframe içine tıkladığında window blur olur, bu sayede üst barı getirebiliriz
+  window.addEventListener('blur', () => {
+    if (isOpen()) {
+      _showTopbar();
+    }
   });
 
   // Topbar üzerinde tıklamalarda üst barın hemen kapanmasını önle
