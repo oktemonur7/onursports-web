@@ -108,8 +108,9 @@ const UI = (() => {
         ${src.quality ? `<span class="source-quality source-quality--${src.quality.toLowerCase()}">${src.quality}</span>` : ''}
       `;
       btn.addEventListener('click', () => {
+        const matchSnap = popupMatch; // closePopup() null'lar, önce snapshot al
         closePopup();
-        _playSourceDirect(src, popupMatch);
+        _playSourceDirect(src, matchSnap);
       });
       sourceList.appendChild(btn);
     });
@@ -172,8 +173,10 @@ const UI = (() => {
           e.preventDefault(); focusSourceBtn(popupSourceIndex + 1); break;
         case 'Enter': case ' ':
           e.preventDefault();
+          const srcSnap = popupMatch?.sources[popupSourceIndex];
+          const matchSnap = popupMatch;
           closePopup();
-          if (popupMatch) _playSourceDirect(popupMatch.sources[popupSourceIndex], popupMatch);
+          if (srcSnap && matchSnap) _playSourceDirect(srcSnap, matchSnap);
           break;
         case 'Escape': case 'Backspace': case 8: case 27:
           e.preventDefault(); closePopup(); break;
