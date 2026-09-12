@@ -77,6 +77,19 @@ const Player = (() => {
 
   function isOpen() { return overlay.style.display === 'flex'; }
 
+  function _toggleTopbar() {
+    if (topbar.classList.contains('player-topbar--hidden')) {
+      _showTopbar();
+    } else {
+      _hideTopbar();
+    }
+  }
+
+  function _hideTopbar() {
+    clearTimeout(topbarTimer);
+    topbar.classList.add('player-topbar--hidden');
+  }
+
   // ── Butonlar ──
   closeBtn?.addEventListener('click', close);
 
@@ -88,17 +101,17 @@ const Player = (() => {
 
   fsBtn?.addEventListener('click', _toggleFullscreen);
 
-  // Mouse hareketi veya üst alana gelme → topbar göster
-  const sensor = document.getElementById('player-topbar-sensor');
-  sensor?.addEventListener('mouseenter', _showTopbar);
-  topbar?.addEventListener('mouseenter', _showTopbar);
-  overlay?.addEventListener('mousemove', _showTopbar);
+  // Ekrana tıklandığında üst barı aç/kapat (mouse hareketi ile değil)
+  const clickShield = document.getElementById('player-click-shield');
+  clickShield?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _toggleTopbar();
+  });
 
-  // Fare ekranın üst kısmına geldiğinde (iframe üzerinde olsa bile document üzerinden yakalama)
-  document.addEventListener('mousemove', (e) => {
-    if (isOpen() && e.clientY < 90) {
-      _showTopbar();
-    }
+  // Topbar üzerinde tıklamalarda üst barın hemen kapanmasını önle
+  topbar?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    _showTopbar();
   });
 
   // ESC tuşu
