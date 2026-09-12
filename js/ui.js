@@ -123,7 +123,14 @@ const UI = (() => {
     const matchTitle = match.home && match.away
       ? `${match.home} vs ${match.away}`
       : match.title || '';
-    Player.open(matchTitle, src, () => { focusCard(activeCardIndex); });
+    const matchIdx = matches.indexOf(match);
+    const hasMultipleSources = match.sources && match.sources.length > 1;
+    Player.open(
+      matchTitle,
+      src,
+      () => { focusCard(activeCardIndex); },
+      hasMultipleSources && matchIdx !== -1 ? () => openPopup(matchIdx) : null
+    );
   }
 
   function closePopup() {

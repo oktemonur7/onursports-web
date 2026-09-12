@@ -1,22 +1,25 @@
 /**
  * player.js — Onur Sports Web
+ * - ← Geri (ana menüye dön)
+ * - 📡 Kaynak Seç (popup'ı yeniden aç)
  * - Tam ekran (Fullscreen API)
  * - Topbar mouse hareketinde göster, 4 sn sonra gizle
- * - ESC / Kapat butonu ile çıkış
  */
 
 const Player = (() => {
   let topbarTimer = null;
   let onCloseCallback = null;
+  let onSelectSourceCallback = null;
 
-  const overlay  = document.getElementById('player-overlay');
-  const topbar   = document.getElementById('player-topbar');
-  const titleEl  = document.getElementById('player-match-title');
-  const labelEl  = document.getElementById('player-source-label');
-  const iframe   = document.getElementById('player-iframe');
-  const loading  = document.getElementById('player-loading');
-  const closeBtn = document.getElementById('player-close-btn');
-  const fsBtn    = document.getElementById('player-fullscreen-btn');
+  const overlay      = document.getElementById('player-overlay');
+  const topbar       = document.getElementById('player-topbar');
+  const titleEl      = document.getElementById('player-match-title');
+  const labelEl      = document.getElementById('player-source-label');
+  const iframe       = document.getElementById('player-iframe');
+  const loading      = document.getElementById('player-loading');
+  const closeBtn     = document.getElementById('player-close-btn');
+  const sourceSwitchBtn = document.getElementById('player-source-switch-btn');
+  const fsBtn        = document.getElementById('player-fullscreen-btn');
 
   function _showTopbar() {
     topbar.classList.remove('player-topbar--hidden');
@@ -30,16 +33,23 @@ const Player = (() => {
     const el = document.getElementById('player-frame-wrap');
     if (!document.fullscreenElement) {
       el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
-      fsBtn.textContent = '⛶';
     } else {
       document.exitFullscreen?.() || document.webkitExitFullscreen?.();
     }
   }
 
-  function open(matchTitle, source, onClose) {
+  // matchTitle, source, onClose, onSelectSource (opsiyonel — çok kaynak varsa gösterilir)
+  function open(matchTitle, source, onClose, onSelectSource) {
     onCloseCallback = onClose;
+    onSelectSourceCallback = onSelectSource || null;
+
     titleEl.textContent = matchTitle;
     labelEl.textContent = source.label;
+
+    // "Kaynak Seç" butonu — sadece birden fazla kaynak varsa göster
+    if (sourceSwitchBtn) {
+      sourceSwitchBtn.style.display = onSelectSource ? 'inline-flex' : 'none';
+    }
 
     loading.style.display = 'flex';
     iframe.src = '';
@@ -48,7 +58,6 @@ const Player = (() => {
     document.body.style.overflow = 'hidden';
 
     setTimeout(() => { iframe.src = source.url; }, 100);
-
     iframe.onload = () => { loading.style.display = 'none'; };
 
     _showTopbar();
@@ -56,35 +65,39 @@ const Player = (() => {
 
   function close() {
     clearTimeout(topbarTimer);
-    if (document.fullscreenElement) {
-      document.exitFullscreen?.();
-    }
+    if (document.fullscreenElement) document.exitFullscreen?.();
     iframe.src = 'about:blank';
     overlay.style.display = 'none';
     document.body.style.overflow = '';
-    onCloseCallback?.();
+    const cb = onCloseCallback;
     onCloseCallback = null;
+    onSelectSourceCallback = null;
+    cb?.();
   }
 
   function isOpen() { return overlay.style.display === 'flex'; }
 
-  // Buton event'leri
+  // ── Butonlar ──
   closeBtn?.addEventListener('click', close);
+
+  sourceSwitchBtn?.addEventListener('click', () => {
+    const cb = onSelectSourceCallback;
+    close(); // önce kapat (onClose çağrılır, focus maç listesine döner)
+    setTimeout(() => cb?.(), 150); // kısa gecikme sonra popup'ı aç
+  });
+
   fsBtn?.addEventListener('click', _toggleFullscreen);
 
-  // Mouse hareketi → topbar'ı göster
+  // Mouse hareketi → topbar göster
   overlay?.addEventListener('mousemove', _showTopbar);
 
   // ESC tuşu
   document.addEventListener('keydown', e => {
     if (!isOpen()) return;
-    if (e.key === 'Escape' || e.key === 'Backspace') {
-      e.preventDefault();
-      close();
-    }
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
   });
 
-  // Fullscreen değiştiğinde butonu güncelle
+  // Fullscreen değiştiğinde ikonu güncelle
   document.addEventListener('fullscreenchange', () => {
     if (fsBtn) fsBtn.textContent = document.fullscreenElement ? '⊡' : '⛶';
   });
