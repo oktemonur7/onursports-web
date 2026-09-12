@@ -287,17 +287,14 @@ body {
 }
 
 .player-topbar {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 20px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
-  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-  pointer-events: auto;
-}
-.player-topbar--hidden {
-  opacity: 0;
-  transform: translateY(-10px);
-  pointer-events: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px;
+  background: #11111a;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 20;
 }
 
 .player-left-btns {
