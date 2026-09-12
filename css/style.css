@@ -296,23 +296,6 @@ body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   z-index: 20;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
-/* Tam ekrandayken: videonun üstünde yüzer, mouse yaklaşınca gelir */
-.player-overlay--fullscreen .player-topbar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 70%, transparent 100%);
-  border-bottom: none;
-}
-
-.player-overlay--fullscreen .player-topbar.player-topbar--fs-hidden {
-  opacity: 0;
-  transform: translateY(-100%);
-  pointer-events: none;
 }
 
 .player-left-btns {

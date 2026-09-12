@@ -2,8 +2,7 @@
  * player.js — Onur Sports Web
  * - Geri Dön (ana menüye dön)
  * - Kaynak Seç (popup'ı yayın üstünde aç)
- * - Tam ekran (Fullscreen API)
- * - Sabit kalıcı üst bar (kaybolma/zamanlayıcı derdi yok)
+ * - Tam ekran: Videonun kendisini tam ekrana alır, native kontrolleri bozmaz
  */
 
 const Player = (() => {
@@ -20,7 +19,8 @@ const Player = (() => {
   const fsBtn           = document.getElementById('player-fullscreen-btn');
 
   function _toggleFullscreen() {
-    const el = overlay; // Üst bar ile birlikte tüm overlay'i tam ekrana al
+    // Sadece videoyu tam ekrana alarak native player kontrollerini kusursuz tutuyoruz
+    const el = document.getElementById('player-frame-wrap');
     if (!document.fullscreenElement) {
       el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
     } else {
@@ -81,55 +81,9 @@ const Player = (() => {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
   });
 
-  let fsHideTimer = null;
-  const topbar = document.getElementById('player-topbar');
-
-  function _showFsTopbar() {
-    if (!document.fullscreenElement) return;
-    topbar?.classList.remove('player-topbar--fs-hidden');
-    clearTimeout(fsHideTimer);
-    fsHideTimer = setTimeout(() => {
-      if (document.fullscreenElement) {
-        topbar?.classList.add('player-topbar--fs-hidden');
-      }
-    }, 3000);
-  }
-
-  // Fullscreen değiştiğinde
+  // Fullscreen ikon güncelleme
   document.addEventListener('fullscreenchange', () => {
-    const isFs = !!document.fullscreenElement;
-    if (fsBtn) fsBtn.textContent = isFs ? '⊡' : '⛶';
-
-    if (isFs) {
-      overlay.classList.add('player-overlay--fullscreen');
-      _showFsTopbar();
-    } else {
-      overlay.classList.remove('player-overlay--fullscreen');
-      topbar?.classList.remove('player-topbar--fs-hidden');
-      clearTimeout(fsHideTimer);
-    }
-  });
-
-  // Tam ekrandayken fare yukarı yaklaştığında üst barı göster
-  document.addEventListener('mousemove', (e) => {
-    if (isOpen() && document.fullscreenElement) {
-      if (e.clientY < 70) {
-        _showFsTopbar();
-      }
-    }
-  });
-
-  topbar?.addEventListener('mouseenter', () => {
-    if (document.fullscreenElement) {
-      clearTimeout(fsHideTimer);
-      topbar.classList.remove('player-topbar--fs-hidden');
-    }
-  });
-
-  topbar?.addEventListener('mouseleave', () => {
-    if (document.fullscreenElement) {
-      _showFsTopbar();
-    }
+    if (fsBtn) fsBtn.textContent = document.fullscreenElement ? '⊡' : '⛶';
   });
 
   function changeSource(newSource) {
