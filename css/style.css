@@ -226,7 +226,7 @@ body {
   position: fixed; inset: 0;
   background: rgba(5,5,10,0.82);
   backdrop-filter: blur(12px);
-  z-index: 200;
+  z-index: 400; /* Player overlay'in (300) üstünde açılması için */
   align-items: center; justify-content: center;
   padding: 16px;
 }
@@ -286,14 +286,29 @@ body {
   display: flex; flex-direction: column;
 }
 
+.player-topbar-sensor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  z-index: 15;
+  pointer-events: auto;
+}
+
 .player-topbar {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 20px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.92) 0%, transparent 100%);
-  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
-  transition: opacity 0.4s ease;
+  background: linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 70%, transparent 100%);
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: auto;
 }
-.player-topbar--hidden { opacity: 0; pointer-events: none; }
+.player-topbar--hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+}
 
 .player-left-btns {
   display: flex;

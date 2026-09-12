@@ -108,9 +108,13 @@ const UI = (() => {
         ${src.quality ? `<span class="source-quality source-quality--${src.quality.toLowerCase()}">${src.quality}</span>` : ''}
       `;
       btn.addEventListener('click', () => {
-        const matchSnap = popupMatch; // closePopup() null'lar, önce snapshot al
+        const matchSnap = popupMatch;
         closePopup();
-        _playSourceDirect(src, matchSnap);
+        if (Player.isOpen()) {
+          Player.changeSource(src);
+        } else {
+          _playSourceDirect(src, matchSnap);
+        }
       });
       sourceList.appendChild(btn);
     });
@@ -138,7 +142,9 @@ const UI = (() => {
     popupOpen = false;
     popupMatch = null;
     $('source-popup-overlay').classList.remove('popup-overlay--visible');
-    setTimeout(() => focusCard(activeCardIndex), 100);
+    if (!Player.isOpen()) {
+      setTimeout(() => focusCard(activeCardIndex), 100);
+    }
   }
 
   function focusSourceBtn(idx) {
@@ -183,7 +189,13 @@ const UI = (() => {
           const srcSnap = popupMatch?.sources[popupSourceIndex];
           const matchSnap = popupMatch;
           closePopup();
-          if (srcSnap && matchSnap) _playSourceDirect(srcSnap, matchSnap);
+          if (srcSnap) {
+            if (Player.isOpen()) {
+              Player.changeSource(srcSnap);
+            } else if (matchSnap) {
+              _playSourceDirect(srcSnap, matchSnap);
+            }
+          }
           break;
         case 'Escape': case 'Backspace': case 8: case 27:
           e.preventDefault(); closePopup(); break;

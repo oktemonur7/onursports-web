@@ -80,20 +80,34 @@ const Player = (() => {
   // ── Butonlar ──
   closeBtn?.addEventListener('click', close);
 
-  sourceSwitchBtn?.addEventListener('click', () => {
-    const cb = onSelectSourceCallback;
-    close(); // önce kapat (onClose çağrılır, focus maç listesine döner)
-    setTimeout(() => cb?.(), 150); // kısa gecikme sonra popup'ı aç
+  sourceSwitchBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Yayından çıkmadan (iframe'i bozmadan) üstüne popup aç
+    onSelectSourceCallback?.();
   });
 
   fsBtn?.addEventListener('click', _toggleFullscreen);
 
-  // Mouse hareketi → topbar göster
+  // Mouse hareketi veya üst alana gelme → topbar göster
+  const sensor = document.getElementById('player-topbar-sensor');
+  sensor?.addEventListener('mouseenter', _showTopbar);
+  topbar?.addEventListener('mouseenter', _showTopbar);
   overlay?.addEventListener('mousemove', _showTopbar);
+
+  // Fare ekranın üst kısmına geldiğinde (iframe üzerinde olsa bile document üzerinden yakalama)
+  document.addEventListener('mousemove', (e) => {
+    if (isOpen() && e.clientY < 90) {
+      _showTopbar();
+    }
+  });
 
   // ESC tuşu
   document.addEventListener('keydown', e => {
     if (!isOpen()) return;
+    // Eğer popup açıksa ESC tuşunu popup kapatsın, player kalmaya devam etsin
+    if (document.getElementById('source-popup-overlay')?.classList.contains('popup-overlay--visible')) {
+      return;
+    }
     if (e.key === 'Escape') { e.preventDefault(); close(); }
   });
 
@@ -102,7 +116,15 @@ const Player = (() => {
     if (fsBtn) fsBtn.textContent = document.fullscreenElement ? '⊡' : '⛶';
   });
 
-  return { open, close, isOpen };
+  function changeSource(newSource) {
+    labelEl.textContent = newSource.label;
+    loading.style.display = 'flex';
+    iframe.src = '';
+    setTimeout(() => { iframe.src = newSource.url; }, 100);
+    _showTopbar();
+  }
+
+  return { open, close, isOpen, changeSource };
 })();
 
 window.Player = Player;
