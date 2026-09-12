@@ -81,9 +81,55 @@ const Player = (() => {
     if (e.key === 'Escape') { e.preventDefault(); close(); }
   });
 
-  // Fullscreen ikon güncelleme
+  let fsHideTimer = null;
+  const topbar = document.getElementById('player-topbar');
+
+  function _showFsTopbar() {
+    if (!document.fullscreenElement) return;
+    topbar?.classList.remove('player-topbar--fs-hidden');
+    clearTimeout(fsHideTimer);
+    fsHideTimer = setTimeout(() => {
+      if (document.fullscreenElement) {
+        topbar?.classList.add('player-topbar--fs-hidden');
+      }
+    }, 3000);
+  }
+
+  // Fullscreen değiştiğinde
   document.addEventListener('fullscreenchange', () => {
-    if (fsBtn) fsBtn.textContent = document.fullscreenElement ? '⊡' : '⛶';
+    const isFs = !!document.fullscreenElement;
+    if (fsBtn) fsBtn.textContent = isFs ? '⊡' : '⛶';
+
+    if (isFs) {
+      overlay.classList.add('player-overlay--fullscreen');
+      _showFsTopbar();
+    } else {
+      overlay.classList.remove('player-overlay--fullscreen');
+      topbar?.classList.remove('player-topbar--fs-hidden');
+      clearTimeout(fsHideTimer);
+    }
+  });
+
+  // Tam ekrandayken fare yukarı yaklaştığında üst barı göster
+  document.addEventListener('mousemove', (e) => {
+    if (isOpen() && document.fullscreenElement) {
+      if (e.clientY < 70) {
+        _showFsTopbar();
+      }
+    }
+  });
+
+  topbar?.addEventListener('mouseenter', () => {
+    if (document.fullscreenElement) {
+      clearTimeout(fsHideTimer);
+      topbar.classList.remove('player-topbar--fs-hidden');
+    }
+  });
+
+  topbar?.addEventListener('mouseleave', () => {
+    if (document.fullscreenElement) {
+      _showFsTopbar();
+    }
   });
 
   function changeSource(newSource) {
