@@ -7,8 +7,8 @@ const ASSETS = [
   '/js/player.js',
   '/js/ui.js',
   '/manifest.json',
-  '/public/icon-192.png',
-  '/public/icon-512.png'
+  '/icons/icon-192.png',
+  '/icons/icon-512.png'
 ];
 
 self.addEventListener('install', (e) => {
