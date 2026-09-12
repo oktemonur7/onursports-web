@@ -286,6 +286,18 @@ body {
   display: flex; flex-direction: column;
 }
 
+.player-top-trigger {
+  display: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 25px; /* Ekranın en üst 25 piksellik alanı */
+  z-index: 999999;
+  background: transparent;
+  pointer-events: auto;
+}
+
 .player-topbar {
   display: flex;
   align-items: center;
@@ -296,6 +308,32 @@ body {
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   z-index: 20;
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* Tam ekran modunda: normalde gizlidir, sadece fare yukarı gelince iner */
+.player-overlay--fullscreen .player-top-trigger {
+  display: block;
+}
+
+.player-overlay--fullscreen .player-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000000;
+  background: linear-gradient(180deg, rgba(10,10,15,0.95) 0%, rgba(10,10,15,0.85) 70%, transparent 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+  transform: translateY(-100%); /* Tam ekranda GİZLİ */
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Fare en tepeye geldiğinde veya barda durduğunda bar aşağı iner */
+.player-overlay--fullscreen .player-topbar.player-topbar--visible {
+  transform: translateY(0); /* GÖRÜNÜR */
+  opacity: 1;
+  pointer-events: auto;
 }
 
 .player-left-btns {
