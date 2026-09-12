@@ -126,6 +126,13 @@
       load();
       // 5 dakikada bir sessiz yenile
       setInterval(silentLoad, 5 * 60 * 1000);
+
+      // PWA Service Worker Kaydı
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('[PWA] ServiceWorker kaydı başarısız:', err);
+        });
+      }
     }
 
     return { init, load };
