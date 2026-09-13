@@ -372,6 +372,8 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
 .player-btn-divider {
   width: 1px;
   height: 20px;
