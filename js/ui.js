@@ -1,33 +1,31 @@
 /**
  * ui.js — Onur Sports Web
- * - Mouse tıklama + klavye (ok tuşları, Enter)
- * - Touch desteği (dokunmatik ekran)
- * - Responsive grid (1/2/3/4 sütun CSS ile)
+ * - Arama Çubuğu (Takım adına göre anlık filtreleme, maç seçince otomatik temizleme)
+ * - Maça tıklayınca doğrudan 1. kaynakla açılır
+ * - Mouse & Touch & Klavye navigasyonu
  */
 
 const UI = (() => {
-  let matches = [];
+  let allMatches = [];
+  let displayedMatches = [];
   let activeCardIndex = 0;
-  let popupOpen = false;
-  let popupSourceIndex = 0;
-  let popupMatch = null;
 
   const $ = id => document.getElementById(id);
 
   // ─── Render ──────────────────────────────────────────────────────────
 
   function renderMatchList(matchList) {
-    matches = matchList;
+    displayedMatches = matchList;
     const grid = $('match-grid');
     if (!grid) return;
     grid.innerHTML = '';
 
-    if (matches.length === 0) {
-      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">📺</div><div class="empty-text">Şu an canlı maç yok</div></div>`;
+    if (displayedMatches.length === 0) {
+      grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Aradığınız kriterde maç bulunamadı</div></div>`;
       return;
     }
 
-    matches.forEach((match, idx) => {
+    displayedMatches.forEach((match, idx) => {
       const card = document.createElement('div');
       card.className = 'match-card';
       card.dataset.idx = idx;
@@ -46,18 +44,39 @@ const UI = (() => {
 
       card.innerHTML = `<div class="card-title">${titleHtml}</div>${timeHtml}`;
 
-      // Mouse / Touch
-      card.addEventListener('click', () => openPopup(idx));
+      // Mouse / Touch ile maça tıklayınca doğrudan 1. kaynakla başlat
+      card.addEventListener('click', () => playMatch(idx));
       card.addEventListener('focus', () => { activeCardIndex = idx; });
 
       grid.appendChild(card);
     });
 
-    // Klavye odağı için ilk kartı fokusla
-    requestAnimationFrame(() => {
-      const firstCard = grid.querySelector('.match-card');
-      if (firstCard) firstCard.focus({ preventScroll: true });
+    if (activeCardIndex >= displayedMatches.length) {
+      activeCardIndex = 0;
+    }
+  }
+
+  function setMatches(list) {
+    allMatches = list;
+    const searchInput = $('match-search-input');
+    const query = (searchInput?.value || '').trim();
+    if (query) {
+      filterMatches(query);
+    } else {
+      renderMatchList(allMatches);
+    }
+  }
+
+  function filterMatches(query) {
+    const q = query.toLowerCase();
+    const filtered = allMatches.filter(m => {
+      const home = (m.home || '').toLowerCase();
+      const away = (m.away || '').toLowerCase();
+      const title = (m.title || '').toLowerCase();
+      const competition = (m.competition || '').toLowerCase();
+      return home.includes(q) || away.includes(q) || title.includes(q) || competition.includes(q);
     });
+    renderMatchList(filtered);
   }
 
   function focusCard(idx) {
@@ -75,87 +94,23 @@ const UI = (() => {
     }
   }
 
-  // ─── Popup ────────────────────────────────────────────────────────────
+  // ─── Play Match ───────────────────────────────────────────────────────
 
-  function openPopup(matchIdx) {
-    popupMatch = matches[matchIdx];
-    if (!popupMatch || popupMatch.sources.length === 0) return;
+  function playMatch(idx) {
+    const match = displayedMatches[idx];
+    if (!match || !match.sources || match.sources.length === 0) return;
 
-    // Tek kaynak varsa direkt oynat
-    if (popupMatch.sources.length === 1) {
-      _playSourceDirect(popupMatch.sources[0], popupMatch);
-      return;
+    // Arama kutusunu otomatik temizle ve listeyi sıfırla
+    const searchInput = $('match-search-input');
+    if (searchInput && searchInput.value) {
+      searchInput.value = '';
+      renderMatchList(allMatches);
     }
 
-    popupOpen = true;
-    popupSourceIndex = 0;
-
-    const title = popupMatch.home && popupMatch.away
-      ? `${popupMatch.home} vs ${popupMatch.away}`
-      : popupMatch.title || '';
-
-    $('popup-match-title').textContent = title;
-
-    const sourceList = $('popup-source-list');
-    sourceList.innerHTML = '';
-    popupMatch.sources.forEach((src, i) => {
-      const btn = document.createElement('button');
-      btn.className = `source-btn source-btn--${src.server}`;
-      btn.dataset.idx = i;
-      btn.tabIndex = 0;
-      btn.innerHTML = `
-        <span class="source-label">${escHtml(src.label)}</span>
-        ${src.quality ? `<span class="source-quality source-quality--${src.quality.toLowerCase()}">${src.quality}</span>` : ''}
-      `;
-      btn.addEventListener('click', () => {
-        const matchSnap = popupMatch;
-        closePopup();
-        if (Player.isOpen()) {
-          Player.changeSource(src);
-        } else {
-          _playSourceDirect(src, matchSnap);
-        }
-      });
-      sourceList.appendChild(btn);
+    // Doğrudan 1. kaynak (index: 0) ile başlat
+    Player.open(match, 0, () => {
+      focusCard(activeCardIndex);
     });
-
-    $('source-popup-overlay').classList.add('popup-overlay--visible');
-    setTimeout(() => focusSourceBtn(0), 80);
-  }
-
-  function _playSourceDirect(src, match) {
-    const matchTitle = match.home && match.away
-      ? `${match.home} vs ${match.away}`
-      : match.title || '';
-    const matchIdx = matches.indexOf(match);
-    const hasMultipleSources = match.sources && match.sources.length > 1;
-    Player.open(
-      matchTitle,
-      src,
-      () => { focusCard(activeCardIndex); },
-      hasMultipleSources && matchIdx !== -1 ? () => openPopup(matchIdx) : null
-    );
-  }
-
-  function closePopup() {
-    if (!popupOpen) return;
-    popupOpen = false;
-    popupMatch = null;
-    $('source-popup-overlay').classList.remove('popup-overlay--visible');
-    if (!Player.isOpen()) {
-      setTimeout(() => focusCard(activeCardIndex), 100);
-    }
-  }
-
-  function focusSourceBtn(idx) {
-    const btns = document.querySelectorAll('.source-btn');
-    if (!btns.length) return;
-    if (idx < 0) idx = btns.length - 1;
-    if (idx >= btns.length) idx = 0;
-    popupSourceIndex = idx;
-    btns.forEach(b => b.classList.remove('source-btn--focused'));
-    btns[idx]?.classList.add('source-btn--focused');
-    btns[idx]?.focus({ preventScroll: true });
   }
 
   // ─── Klavye Navigasyonu ───────────────────────────────────────────────
@@ -171,35 +126,17 @@ const UI = (() => {
   function handleKeyDown(e) {
     const key = e.key || e.keyCode;
 
-    if (Player.isOpen()) {
-      if (isBackKey(key)) { e.preventDefault(); Player.close(); }
+    // Arama kutusundayken kart navigasyonunu engelle (ok tuşları input içinde çalışabilsin)
+    if (document.activeElement === $('match-search-input')) {
+      if (key === 'Enter') {
+        $('match-search-input').blur();
+        focusCard(0);
+      }
       return;
     }
 
-    if (popupOpen) {
-      switch (key) {
-        case 'ArrowUp': case 38:
-        case 'ArrowLeft': case 37:
-          e.preventDefault(); focusSourceBtn(popupSourceIndex - 1); break;
-        case 'ArrowDown': case 40:
-        case 'ArrowRight': case 39:
-          e.preventDefault(); focusSourceBtn(popupSourceIndex + 1); break;
-        case 'Enter': case ' ':
-          e.preventDefault();
-          const srcSnap = popupMatch?.sources[popupSourceIndex];
-          const matchSnap = popupMatch;
-          closePopup();
-          if (srcSnap) {
-            if (Player.isOpen()) {
-              Player.changeSource(srcSnap);
-            } else if (matchSnap) {
-              _playSourceDirect(srcSnap, matchSnap);
-            }
-          }
-          break;
-        case 'Escape': case 'Backspace': case 8: case 27:
-          e.preventDefault(); closePopup(); break;
-      }
+    if (Player.isOpen()) {
+      if (isBackKey(key)) { e.preventDefault(); Player.close(); }
       return;
     }
 
@@ -210,7 +147,7 @@ const UI = (() => {
       case 'ArrowLeft':  case 37: e.preventDefault(); focusCard(activeCardIndex - 1); break;
       case 'ArrowRight': case 39: e.preventDefault(); focusCard(activeCardIndex + 1); break;
       case 'Enter': case ' ':
-        e.preventDefault(); openPopup(activeCardIndex); break;
+        e.preventDefault(); playMatch(activeCardIndex); break;
     }
   }
 
@@ -241,9 +178,10 @@ const UI = (() => {
   function init() {
     document.addEventListener('keydown', handleKeyDown);
 
-    // Popup dışına tıklayınca kapat
-    $('source-popup-overlay')?.addEventListener('click', e => {
-      if (e.target === $('source-popup-overlay')) closePopup();
+    // Arama kutusu olayları
+    const searchInput = $('match-search-input');
+    searchInput?.addEventListener('input', (e) => {
+      filterMatches(e.target.value);
     });
 
     // Hata ekranı retry butonu
@@ -252,7 +190,7 @@ const UI = (() => {
     });
   }
 
-  return { init, renderMatchList, showLoading, hideLoading, showError };
+  return { init, renderMatchList: setMatches, showLoading, hideLoading, showError };
 })();
 
 function escHtml(str) {

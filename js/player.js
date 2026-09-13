@@ -1,21 +1,22 @@
 /**
  * player.js — Onur Sports Web
  * - Geri Dön (ana menüye dön)
- * - Kaynak Seç (popup'ı yayın üstünde aç)
- * - Tam ekran: Videonun kendisini tam ekrana alır, native kontrolleri bozmaz
+ * - Maçın kaynak butonları doğrudan üst barda (Kaynak 1, Kaynak 2 vb.)
+ * - 1. kaynakla otomatik başlar
+ * - Tam ekran desteği
  */
 
 const Player = (() => {
+  let currentMatch = null;
+  let currentSourceIndex = 0;
   let onCloseCallback = null;
-  let onSelectSourceCallback = null;
 
   const overlay         = document.getElementById('player-overlay');
   const titleEl         = document.getElementById('player-match-title');
-  const labelEl         = document.getElementById('player-source-label');
+  const sourcesGroup    = document.getElementById('player-sources-group');
   const iframe          = document.getElementById('player-iframe');
   const loading         = document.getElementById('player-loading');
   const closeBtn        = document.getElementById('player-close-btn');
-  const sourceSwitchBtn = document.getElementById('player-source-switch-btn');
   const fsBtn           = document.getElementById('player-fullscreen-btn');
 
   function _toggleFullscreen() {
@@ -45,22 +46,17 @@ const Player = (() => {
     }, 1500);
   }
 
-  // Sensöre veya bara mouse geldiğinde aç
   trigger?.addEventListener('mouseenter', _revealTopbar);
   topbar?.addEventListener('mouseenter', _revealTopbar);
-
-  // Mouse bardan ayrıldığında gizle
   topbar?.addEventListener('mouseleave', _scheduleHideTopbar);
   trigger?.addEventListener('mouseleave', _scheduleHideTopbar);
 
-  // Fullscreen durumu değiştiğinde
   document.addEventListener('fullscreenchange', () => {
     const isFs = !!document.fullscreenElement;
     if (fsBtn) fsBtn.textContent = isFs ? '⊡' : '⛶';
 
     if (isFs) {
       overlay.classList.add('player-overlay--fullscreen');
-      // Tam ekrana geçer geçmez 2 sn sonra barı gizle
       _revealTopbar();
       _scheduleHideTopbar();
     } else {
@@ -70,16 +66,42 @@ const Player = (() => {
     }
   });
 
-  function open(matchTitle, source, onClose, onSelectSource) {
+  function _renderSourceButtons() {
+    if (!sourcesGroup) return;
+    sourcesGroup.innerHTML = '';
+
+    const sources = currentMatch?.sources || [];
+    // Yalnızca 1'den fazla kaynak varsa kaynak butonları gösterilir (tek kaynakta kalabalık yapmaz)
+    if (sources.length <= 1) return;
+
+    sources.forEach((src, idx) => {
+      const btn = document.createElement('button');
+      btn.className = `player-source-tab ${idx === currentSourceIndex ? 'player-source-tab--active' : ''}`;
+      btn.textContent = `Kaynak ${idx + 1}${src.quality ? ' · ' + src.quality : ''}`;
+      btn.title = `Kaynak ${idx + 1}'e geç`;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (idx === currentSourceIndex) return;
+        changeSource(idx);
+      });
+
+      sourcesGroup.appendChild(btn);
+    });
+  }
+
+  function open(match, initialSourceIndex = 0, onClose) {
+    currentMatch = match;
+    currentSourceIndex = initialSourceIndex;
     onCloseCallback = onClose;
-    onSelectSourceCallback = onSelectSource || null;
+
+    const matchTitle = match.home && match.away
+      ? `${match.home} vs ${match.away}`
+      : match.title || '';
 
     titleEl.textContent = matchTitle;
-    labelEl.textContent = source.label;
 
-    if (sourceSwitchBtn) {
-      sourceSwitchBtn.style.display = onSelectSource ? 'inline-flex' : 'none';
-    }
+    _renderSourceButtons();
 
     loading.style.display = 'flex';
     iframe.src = '';
@@ -87,7 +109,10 @@ const Player = (() => {
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    setTimeout(() => { iframe.src = source.url; }, 100);
+    const activeSrc = match.sources?.[currentSourceIndex];
+    if (activeSrc && activeSrc.url) {
+      setTimeout(() => { iframe.src = activeSrc.url; }, 100);
+    }
     iframe.onload = () => { loading.style.display = 'none'; };
   }
 
@@ -98,34 +123,27 @@ const Player = (() => {
     document.body.style.overflow = '';
     const cb = onCloseCallback;
     onCloseCallback = null;
-    onSelectSourceCallback = null;
+    currentMatch = null;
+    currentSourceIndex = 0;
     cb?.();
   }
 
   function isOpen() { return overlay.style.display === 'flex'; }
 
-  // ── Butonlar ──
   closeBtn?.addEventListener('click', close);
-
-  sourceSwitchBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    onSelectSourceCallback?.();
-  });
-
   fsBtn?.addEventListener('click', _toggleFullscreen);
 
-  // ESC tuşu
   document.addEventListener('keydown', e => {
     if (!isOpen()) return;
-    if (document.getElementById('source-popup-overlay')?.classList.contains('popup-overlay--visible')) {
-      return;
-    }
     if (e.key === 'Escape') { e.preventDefault(); close(); }
   });
 
+  function changeSource(newIndex) {
+    if (!currentMatch || !currentMatch.sources?.[newIndex]) return;
+    currentSourceIndex = newIndex;
+    _renderSourceButtons();
 
-  function changeSource(newSource) {
-    labelEl.textContent = newSource.label;
+    const newSource = currentMatch.sources[newIndex];
     loading.style.display = 'flex';
     iframe.src = '';
     setTimeout(() => { iframe.src = newSource.url; }, 100);

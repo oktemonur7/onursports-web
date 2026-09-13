@@ -24,6 +24,9 @@
         <span class="logo-icon">⚽</span>
         <span class="logo-text">Onur Sports</span>
       </div>
+      <div class="header-search">
+        <input type="text" id="match-search-input" placeholder="Takım ara…" autocomplete="off" />
+      </div>
       <div class="header-ticker">
         <span class="ticker-text">
           Ünlü futbolcu Hakan Ünal, jet sosyete Ajda hanım, iş insanı Ali bey hepsi Onur Sports'da
@@ -60,11 +63,10 @@
   <div class="player-topbar" id="player-topbar">
     <div class="player-left-btns">
       <button class="player-back-btn" id="player-close-btn" title="Ana Menüye Dön">Geri Dön</button>
-      <button class="player-source-btn" id="player-source-switch-btn" title="Kaynak Seç">Kaynak Seç</button>
+      <div class="player-sources-group" id="player-sources-group"></div>
     </div>
     <span class="player-match-title" id="player-match-title"></span>
     <div class="player-right-btns">
-      <span class="player-source-label" id="player-source-label"></span>
       <button class="player-fullscreen-btn" id="player-fullscreen-btn" title="Tam Ekran">⛶</button>
     </div>
   </div>
@@ -81,18 +83,6 @@
       <div class="spinner"></div>
       <span>Yayın yükleniyor…</span>
     </div>
-  </div>
-</div>
-
-<!-- Source Popup -->
-<div id="source-popup-overlay" role="dialog" aria-modal="true">
-  <div id="source-popup">
-    <div class="popup-header">
-      <div id="popup-match-title"></div>
-    </div>
-    <div class="popup-divider"></div>
-    <div class="popup-source-label">Kaynak Seçin</div>
-    <div id="popup-source-list" role="list"></div>
   </div>
 </div>
 
