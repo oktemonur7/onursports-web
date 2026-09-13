@@ -67,12 +67,18 @@ const Player = (() => {
   });
 
   function _renderSourceButtons() {
+    const divider = document.getElementById('player-btn-divider');
     if (!sourcesGroup) return;
     sourcesGroup.innerHTML = '';
 
     const sources = currentMatch?.sources || [];
-    // Yalnızca 1'den fazla kaynak varsa kaynak butonları gösterilir (tek kaynakta kalabalık yapmaz)
-    if (sources.length <= 1) return;
+    // Yalnızca 1'den fazla kaynak varsa kaynak butonları ve ayırıcı gösterilir
+    if (sources.length <= 1) {
+      if (divider) divider.style.display = 'none';
+      return;
+    }
+
+    if (divider) divider.style.display = 'block';
 
     sources.forEach((src, idx) => {
       const btn = document.createElement('button');
