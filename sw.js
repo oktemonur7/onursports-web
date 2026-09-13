@@ -1,4 +1,4 @@
-const CACHE_NAME = 'onursports-v7';
+const CACHE_NAME = 'onursports-v8';
 const ASSETS = [
   '/',
   '/index.html',

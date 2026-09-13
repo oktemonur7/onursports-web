@@ -83,7 +83,7 @@ const Player = (() => {
     sources.forEach((src, idx) => {
       const btn = document.createElement('button');
       btn.className = `player-source-tab ${idx === currentSourceIndex ? 'player-source-tab--active' : ''}`;
-      btn.textContent = `Kaynak ${idx + 1}${src.quality ? ' · ' + src.quality : ''}`;
+      btn.textContent = `Kaynak ${idx + 1}`;
       btn.title = `Kaynak ${idx + 1}'e geç`;
 
       btn.addEventListener('click', (e) => {

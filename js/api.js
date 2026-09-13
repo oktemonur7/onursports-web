@@ -85,9 +85,8 @@ function normalizeMatch(raw) {
   const sources = [];
 
   rawSources.forEach((src, idx) => {
-    const quality = resolveQualityLabel(src);
     const url = src.url || src.link || src.stream || null;
-    if (url) sources.push({ label: `Kaynak ${idx + 1}${quality ? ' · ' + quality : ''}`, url, server: 'falcon', quality });
+    if (url) sources.push({ label: `Kaynak ${idx + 1}`, url, server: 'falcon' });
   });
 
   return {
