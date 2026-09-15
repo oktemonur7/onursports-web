@@ -137,13 +137,8 @@ const Player = (() => {
   function _loadSource(source) {
     loading.style.display = 'flex';
     if (!source || !source.url) { loading.style.display = 'none'; return; }
-    const url = source.url;
-    // .m3u8 veya betine sunucusu → HLS player
-    if (source.server === 'betine') {
-      _playHLS(url);
-    } else {
-      _playIframe(url);
-    }
+    // Tum kaynaklar iframe ile acilir (betine artik kendi sayfasini iframe'de gosteriyor)
+    _playIframe(source.url);
   }
 
   function open(match, initialSourceIndex = 0, onClose) {
