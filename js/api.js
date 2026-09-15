@@ -98,12 +98,66 @@ function normalizeMatch(raw) {
   };
 }
 
+function cleanTeamName(name) {
+  if (!name) return '';
+  return name.toLowerCase()
+    .replace(/[ıİ]/g, 'i').replace(/ç/g, 'c').replace(/ş/g, 's')
+    .replace(/ö/g, 'o').replace(/ü/g, 'u').replace(/ğ/g, 'g')
+    .replace(/\b(fc|saf|rj|sp|pr|sc|rs|ec|ac|ca|cr|cf|cd|cs)\b/gi, '')
+    .replace(/[^a-z0-9]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function deduplicateMatches(matches) {
+  const map = new Map();
+
+  for (const match of matches) {
+    const t1 = cleanTeamName(match.home);
+    const t2 = cleanTeamName(match.away);
+
+    // Takım isimleri ayrıştırılamadıysa title'dan key üret
+    const key = (t1 && t2) 
+      ? [t1, t2].sort().join('___')
+      : cleanTeamName(match.title);
+
+    if (!key) {
+      continue;
+    }
+
+    if (!map.has(key)) {
+      map.set(key, { ...match, sources: [...match.sources] });
+    } else {
+      const existing = map.get(key);
+      const existingUrls = new Set(existing.sources.map(s => s.url));
+
+      // Yeni ve benzersiz kaynakları ekle
+      for (const src of match.sources) {
+        if (!existingUrls.has(src.url)) {
+          existing.sources.push(src);
+          existingUrls.add(src.url);
+        }
+      }
+    }
+  }
+
+  // Kaynakları Kaynak 1, Kaynak 2... olarak yeniden numaralandır
+  return Array.from(map.values()).map(m => {
+    m.sources = m.sources.map((s, idx) => ({
+      ...s,
+      label: `Kaynak ${idx + 1}`
+    }));
+    return m;
+  });
+}
+
 async function fetchAllMatches() {
   console.log('[API] Falcon maçları çekiliyor…');
   const falconRaw = await fetchServer('falcon');
   let result = falconRaw.map(m => normalizeMatch(m)).filter(m => m.sources.length > 0);
   result = result.filter(m => !isExcludedMatch(m));
-  console.log(`[API] Filtrelenmiş maç sayısı: ${result.length}`);
+  result = deduplicateMatches(result);
+  console.log(`[API] Filtrelenmiş ve tekilleştirilmiş maç sayısı: ${result.length}`);
   return result;
 }
 
