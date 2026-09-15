@@ -139,7 +139,7 @@ const Player = (() => {
     if (!source || !source.url) { loading.style.display = 'none'; return; }
     const url = source.url;
     // .m3u8 veya betine sunucusu → HLS player
-    if (url.includes('.m3u8') || source.server === 'betine') {
+    if (source.server === 'betine') {
       _playHLS(url);
     } else {
       _playIframe(url);
