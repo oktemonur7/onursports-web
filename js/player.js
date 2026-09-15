@@ -1,33 +1,34 @@
 /**
  * player.js — Onur Sports Web
- * - iframe (Falcon kaynakları) + HLS video (Betine .m3u8 kaynakları)
- * - Geri Dön, kaynak sekmeleri, tam ekran
+ * - Geri Dön (ana menüye dön)
+ * - Maçın kaynak butonları doğrudan üst barda (Kaynak 1, Kaynak 2 vb.)
+ * - 1. kaynakla otomatik başlar
+ * - Tam ekran desteği
  */
 
 const Player = (() => {
   let currentMatch = null;
   let currentSourceIndex = 0;
   let onCloseCallback = null;
-  let hlsInstance = null;
 
-  const overlay      = document.getElementById('player-overlay');
-  const titleEl      = document.getElementById('player-match-title');
-  const sourcesGroup = document.getElementById('player-sources-group');
-  const iframe       = document.getElementById('player-iframe');
-  const videoEl      = document.getElementById('player-video');
-  const loading      = document.getElementById('player-loading');
-  const closeBtn     = document.getElementById('player-close-btn');
-  const fsBtn        = document.getElementById('player-fullscreen-btn');
+  const overlay         = document.getElementById('player-overlay');
+  const titleEl         = document.getElementById('player-match-title');
+  const sourcesGroup    = document.getElementById('player-sources-group');
+  const iframe          = document.getElementById('player-iframe');
+  const loading         = document.getElementById('player-loading');
+  const closeBtn        = document.getElementById('player-close-btn');
+  const fsBtn           = document.getElementById('player-fullscreen-btn');
 
   function _toggleFullscreen() {
+    const el = overlay;
     if (!document.fullscreenElement) {
-      overlay.requestFullscreen?.() || overlay.webkitRequestFullscreen?.();
+      el.requestFullscreen?.() || el.webkitRequestFullscreen?.();
     } else {
       document.exitFullscreen?.() || document.webkitExitFullscreen?.();
     }
   }
 
-  const topbar  = document.getElementById('player-topbar');
+  const topbar = document.getElementById('player-topbar');
   const trigger = document.getElementById('player-top-trigger');
   let fsHideTimeout = null;
 
@@ -53,6 +54,7 @@ const Player = (() => {
   document.addEventListener('fullscreenchange', () => {
     const isFs = !!document.fullscreenElement;
     if (fsBtn) fsBtn.textContent = isFs ? '⊡' : '⛶';
+
     if (isFs) {
       overlay.classList.add('player-overlay--fullscreen');
       _revealTopbar();
@@ -68,97 +70,30 @@ const Player = (() => {
     const divider = document.getElementById('player-btn-divider');
     if (!sourcesGroup) return;
     sourcesGroup.innerHTML = '';
+
     const sources = currentMatch?.sources || [];
+    // Yalnızca 1'den fazla kaynak varsa kaynak butonları ve ayırıcı gösterilir
     if (sources.length <= 1) {
       if (divider) divider.style.display = 'none';
       return;
     }
+
     if (divider) divider.style.display = 'block';
+
     sources.forEach((src, idx) => {
       const btn = document.createElement('button');
-      btn.className = 'player-source-tab' + (idx === currentSourceIndex ? ' player-source-tab--active' : '');
-      btn.textContent = src.label || ('Kaynak ' + (idx + 1));
-      btn.title = 'Kaynak ' + (idx + 1) + "'e geç";
+      btn.className = `player-source-tab ${idx === currentSourceIndex ? 'player-source-tab--active' : ''}`;
+      btn.textContent = `Kaynak ${idx + 1}`;
+      btn.title = `Kaynak ${idx + 1}'e geç`;
+
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         if (idx === currentSourceIndex) return;
         changeSource(idx);
       });
+
       sourcesGroup.appendChild(btn);
     });
-  }
-
-  /** HLS.js ile .m3u8 oynat */
-  function _playHLS(url) {
-    // Önceki HLS instance'ı temizle
-    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-    iframe.style.display = 'none';
-    videoEl.style.display = 'block';
-    videoEl.src = '';
-
-    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-      hlsInstance = new Hls({ enableWorker: false });
-      hlsInstance.loadSource(url);
-      hlsInstance.attachMedia(videoEl);
-      hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
-        loading.style.display = 'none';
-        videoEl.play().catch(() => {});
-      });
-      hlsInstance.on(Hls.Events.ERROR, (event, data) => {
-        if (data.fatal) {
-          console.warn('[HLS] Fatal hata:', data);
-          loading.style.display = 'none';
-        }
-      });
-    } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
-      // Safari native HLS
-      videoEl.src = url;
-      videoEl.addEventListener('loadedmetadata', () => {
-        loading.style.display = 'none';
-        videoEl.play().catch(() => {});
-      }, { once: true });
-    } else {
-      console.warn('[Player] HLS desteklenmiyor');
-      loading.style.display = 'none';
-    }
-  }
-
-  /** iframe ile oynat */
-  function _playIframe(url) {
-    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-    videoEl.style.display = 'none';
-    videoEl.src = '';
-    iframe.style.display = 'block';
-    iframe.src = '';
-    setTimeout(() => { iframe.src = url; }, 100);
-    iframe.onload = () => { loading.style.display = 'none'; };
-
-    // Iframe 8 saniye icinde yuklenmezse otomatik sonraki kaynaga gec
-    clearTimeout(Player._autoFallbackTimer);
-    Player._autoFallbackTimer = setTimeout(() => {
-      if (loading.style.display !== 'none') {
-        const sources = currentMatch?.sources || [];
-        const next = currentSourceIndex + 1;
-        if (next < sources.length) {
-          console.log('[Player] Kaynak ' + (currentSourceIndex+1) + ' yuklenmedi, Kaynak ' + (next+1) + ' deneniyor...');
-          changeSource(next);
-        } else {
-          loading.style.display = 'none';
-        }
-      }
-    }, 8000);
-  }
-
-  function _loadSource(source) {
-    loading.style.display = 'flex';
-    if (!source || !source.url) { loading.style.display = 'none'; return; }
-    // Betine kaynaklari: index.css veya .m3u8 → HLS.js (CORS acik)
-    // Falcon kaynaklari: iframe (livelive24, player.787200 vb.)
-    if (source.server === 'betine') {
-      _playHLS(source.url);
-    } else {
-      _playIframe(source.url);
-    }
   }
 
   function open(match, initialSourceIndex = 0, onClose) {
@@ -169,24 +104,27 @@ const Player = (() => {
     const matchTitle = match.home && match.away
       ? `${match.home} vs ${match.away}`
       : match.title || '';
+
     titleEl.textContent = matchTitle;
 
     _renderSourceButtons();
 
+    loading.style.display = 'flex';
+    iframe.src = '';
+
     overlay.style.display = 'flex';
     document.body.style.overflow = 'hidden';
 
-    _loadSource(match.sources?.[currentSourceIndex]);
+    const activeSrc = match.sources?.[currentSourceIndex];
+    if (activeSrc && activeSrc.url) {
+      setTimeout(() => { iframe.src = activeSrc.url; }, 100);
+    }
+    iframe.onload = () => { loading.style.display = 'none'; };
   }
 
   function close() {
     if (document.fullscreenElement) document.exitFullscreen?.();
-    // HLS temizle
-    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; }
-    videoEl.src = '';
-    videoEl.style.display = 'none';
     iframe.src = 'about:blank';
-    iframe.style.display = 'block';
     overlay.style.display = 'none';
     document.body.style.overflow = '';
     const cb = onCloseCallback;
@@ -210,7 +148,11 @@ const Player = (() => {
     if (!currentMatch || !currentMatch.sources?.[newIndex]) return;
     currentSourceIndex = newIndex;
     _renderSourceButtons();
-    _loadSource(currentMatch.sources[newIndex]);
+
+    const newSource = currentMatch.sources[newIndex];
+    loading.style.display = 'flex';
+    iframe.src = '';
+    setTimeout(() => { iframe.src = newSource.url; }, 100);
   }
 
   return { open, close, isOpen, changeSource };
