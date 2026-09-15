@@ -95,7 +95,7 @@ function normalizeMatch(raw) {
 // ── 91betine.live entegrasyonu ───────────────────────────
 
 var BETINE_URL = 'https://91betine.live/';
-var BETINE_PROXY = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(BETINE_URL);
+var BETINE_PROXY = '/api/betine';
 
 function normStr(s) {
   return (s || '')

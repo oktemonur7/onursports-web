@@ -132,6 +132,21 @@ const Player = (() => {
     iframe.src = '';
     setTimeout(() => { iframe.src = url; }, 100);
     iframe.onload = () => { loading.style.display = 'none'; };
+
+    // Iframe 8 saniye icinde yuklenmezse otomatik sonraki kaynaga gec
+    clearTimeout(Player._autoFallbackTimer);
+    Player._autoFallbackTimer = setTimeout(() => {
+      if (loading.style.display !== 'none') {
+        const sources = currentMatch?.sources || [];
+        const next = currentSourceIndex + 1;
+        if (next < sources.length) {
+          console.log('[Player] Kaynak ' + (currentSourceIndex+1) + ' yuklenmedi, Kaynak ' + (next+1) + ' deneniyor...');
+          changeSource(next);
+        } else {
+          loading.style.display = 'none';
+        }
+      }
+    }, 8000);
   }
 
   function _loadSource(source) {
