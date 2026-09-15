@@ -152,8 +152,13 @@ const Player = (() => {
   function _loadSource(source) {
     loading.style.display = 'flex';
     if (!source || !source.url) { loading.style.display = 'none'; return; }
-    // Tum kaynaklar iframe ile acilir (betine artik kendi sayfasini iframe'de gosteriyor)
-    _playIframe(source.url);
+    // Betine kaynaklari: index.css veya .m3u8 → HLS.js (CORS acik)
+    // Falcon kaynaklari: iframe (livelive24, player.787200 vb.)
+    if (source.server === 'betine') {
+      _playHLS(source.url);
+    } else {
+      _playIframe(source.url);
+    }
   }
 
   function open(match, initialSourceIndex = 0, onClose) {

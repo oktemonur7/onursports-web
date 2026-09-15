@@ -1,20 +1,17 @@
-// Vercel Serverless Function — Betine proxy
-// /api/betine endpoint'i 91betine.live HTML'ini server-side ceker, CORS sorunsuz
-
-export default async function handler(req, res) {
+// Vercel Serverless Function — Betine HTML proxy
+module.exports = async function handler(req, res) {
   try {
     const response = await fetch('https://91betine.live/', {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
         'Accept-Language': 'tr-TR,tr;q=0.9,en;q=0.8',
-        'Referer': 'https://91betine.live/',
       },
       signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
-      return res.status(response.status).json({ error: `Upstream ${response.status}` });
+      return res.status(response.status).json({ error: 'Upstream ' + response.status });
     }
 
     const html = await response.text();
@@ -25,4 +22,4 @@ export default async function handler(req, res) {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-}
+};
