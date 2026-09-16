@@ -9,7 +9,6 @@ function resolveQualityLabel(srcObj) {
   const h = [srcObj.url, srcObj.name, srcObj.label, srcObj.quality, srcObj.title, srcObj.channelName]
     .filter(Boolean).join(' ').toUpperCase();
   if (h.includes('FHD') || h.includes('1080')) return 'FHD';
-  if (h.includes('DLHD') || h.includes('HD') || h.includes('720')) return 'HD';
   return '';
 }
 
@@ -86,7 +85,9 @@ function normalizeMatch(raw) {
 
   rawSources.forEach((src, idx) => {
     const url = src.url || src.link || src.stream || null;
-    if (url) sources.push({ label: `Kaynak ${idx + 1}`, url, server: 'falcon' });
+    const quality = resolveQualityLabel(src);
+    const label = `Kaynak ${idx + 1}${quality ? ' · ' + quality : ''}`;
+    if (url) sources.push({ label, url, server: 'falcon', quality });
   });
 
   return {
@@ -141,12 +142,15 @@ function deduplicateMatches(matches) {
     }
   }
 
-  // Kaynakları Kaynak 1, Kaynak 2... olarak yeniden numaralandır
+  // Kaynakları Kaynak 1, Kaynak 2... olarak yeniden numaralandır (FHD ise ekle)
   return Array.from(map.values()).map(m => {
-    m.sources = m.sources.map((s, idx) => ({
-      ...s,
-      label: `Kaynak ${idx + 1}`
-    }));
+    m.sources = m.sources.map((s, idx) => {
+      const q = s.quality || '';
+      return {
+        ...s,
+        label: `Kaynak ${idx + 1}${q ? ' · ' + q : ''}`
+      };
+    });
     return m;
   });
 }
